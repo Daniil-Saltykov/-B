@@ -1,0 +1,110 @@
+
+import flet as ft
+import os
+
+COUNT_FILE = "текстовый документ.txt"
+
+def load_count():
+
+    if os.path.exists(COUNT_FILE):
+        try:
+            with open(COUNT_FILE, "r", encoding="utf-8") as f:
+                content = f.read().strip()
+                if content:
+                    return int(content)
+                else:
+                    return 0
+        except (ValueError, IOError, UnicodeDecodeError):
+            print(f"Ошибка при загрузке счетчика из {COUNT_FILE}. Начинаем с 0.")
+            return 0
+    else:
+
+        return 0
+
+def save_count(current_count):
+    """
+    Сохраняет текущее значение счетчика в файл COUNT_FILE.
+    """
+
+    try:
+        with open(COUNT_FILE, "w", encoding="utf-8") as f:
+            f.write(str(current_count))
+        return True
+    except IOError:
+        print(f"Ошибка при сохранении счетчика в {COUNT_FILE}.")
+        return False
+
+def main(page: ft.Page):
+    page.title = "Счетчик с сохранением и темой"
+    page.vertical_alignment = ft.MainAxisAlignment.CENTER
+
+    count = load_count()
+
+    page.theme_mode = ft.ThemeMode.LIGHT
+
+    # UI элементы
+    count_display = ft.Text(str(count), size=30)
+    message_display = ft.Text("")
+
+
+    def on_click_increment(e):
+        nonlocal count
+        count += 1
+        count_display.value = str(count)
+        message_display.value = ""
+        page.update()
+
+    def on_click_save(e):
+        nonlocal count
+        if save_count(count):
+            message_display.value = f"Сохранено: {count}"
+        else:
+            message_display.value = "Ошибка сохранения!"
+        page.update()
+
+    def on_click_reset(e):
+        nonlocal count
+        count = 0
+        count_display.value = str(count)
+        message_display.value = "Счетчик сброшен"
+        page.update()
+
+    def toggle_theme(e):
+        page.theme_mode = ft.ThemeMode.DARK if page.theme_mode == ft.ThemeMode.LIGHT else ft.ThemeMode.LIGHT
+        theme_button.text = "Светлая тема" if page.theme_mode == ft.ThemeMode.DARK else "Темная тема"
+        page.update()
+
+
+    increment_button = ft.ElevatedButton("Увеличить счетчик", on_click=on_click_increment)
+    save_button = ft.ElevatedButton("Сохранить счетчик", on_click=on_click_save)
+    reset_button = ft.ElevatedButton("Сбросить счетчик", on_click=on_click_reset)
+    theme_button = ft.ElevatedButton("Сменить тему", on_click=toggle_theme)
+
+    if page.theme_mode == ft.ThemeMode.DARK:
+        theme_button.text = "Светлая тема"
+    else:
+        theme_button.text = "Темная тема"
+
+
+    page.add(
+        ft.Column(
+            [
+                ft.Text("Текущий счетчик:"),
+                count_display,
+                ft.Row(
+                    [
+                        increment_button,
+                        save_button,
+                        reset_button,
+                    ],
+                    alignment=ft.MainAxisAlignment.CENTER
+                ),
+                message_display,
+                ft.Container(height=20),
+                theme_button,
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER # Выравниваем содержимое колонки по горизонтали
+        )
+    )
+
+ft.app(target=main)
